@@ -1,0 +1,47 @@
+#%RAML 1.0
+title: Mobile Accounts Experience API
+version: v1
+description: This Api will be used by clients to create or get Account details from Salesforce CRM. 
+
+traits:
+  headerTrait: !include traits/headers_trait.raml
+uses:
+  types: types.raml
+
+/accounts:
+  post:
+    is: [headerTrait]
+    body:
+      application/json:
+        type: types.Account
+        example: !include examples/createAccount.raml
+          
+    responses:
+      201:
+        body:
+          application/json:
+            type: types.CreateResponse
+            example: !include examples/createAccountResponse.raml
+      400:
+        body:
+          application/json:
+            type: types.CreateResponse
+            example: !include examples/http400response.raml
+              
+
+  /{accountId}:
+    get:
+      is: [headerTrait]
+      responses:
+        200:
+          body:
+            application/json:
+              type: types.Account
+              example: !include examples/getAccountById.raml
+        400:
+          body:
+            application/json:
+              type: types.ErrorResponse
+              example: !include examples/http400response.raml
+                
+        

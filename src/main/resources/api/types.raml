@@ -1,0 +1,71 @@
+#%RAML 1.0 Library
+types:
+  Account:
+    type: object
+    properties:
+      name:
+        type: string
+        description: Account Name
+        required: true
+        pattern: ^[a-zA-Z0-9 ]*$
+      email:
+        type: string
+        required: true
+        description: Account's Email
+        pattern: ^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$
+      number?:
+        type: string
+        description: Account Number of length 12
+        maxLength: 12
+        minLength: 12
+      phone?:
+        type: string
+        description: Account's phone number. Exact 10 digits
+        maxLength: 10
+        minLength: 10
+      fax?:
+        type: string
+        description: Account's Fax number
+      billingAddress?:
+        type: Address
+        description: Billing Account address
+      shippingAddress?:
+        type: Address
+        description: Shipping Account address
+
+  Address:
+    type: object
+    properties:
+      street?:
+        type: string
+        description: Street Name
+      city?:
+        type: string
+        description: City Name
+      state?:
+        type: string
+        description: State of Residence or province
+      postalCode?:
+        type: string
+        description: Postal code or zip
+      countryIso?:
+        type: string
+        description: Country ISO Code
+  CreateResponse:
+    type: APIResponse
+  ErrorResponse:
+    type: APIResponse
+  APIResponse:
+    type: object
+    properties:
+      id?:
+        type: string | nil
+        description: Salesforce account ID
+      status:
+        type: integer
+        enum: [0,1]
+        description: |
+          Status of the result
+      message:
+        type: string
+        description: Result Message        
