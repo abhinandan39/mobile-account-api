@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_f7845634_745a_4001_96ce_ade9fcf14f59_Input_Payload = Array<{|  Name: String,   BillingStreet: String | Null,   BillingCity: String | Null,   BillingState: String | Null,   BillingPostalCode: String | Null,   BillingCountry: Any,   ShippingStreet: String | Null,   ShippingCity: String | Null,   ShippingState: String | Null,   ShippingPostalCode: String | Null,   ShippingCountry: Any,   Phone: String | Null,   Fax: String | Null,   AccountNumber: String | Null,   emailAddress__c: String|}>
+

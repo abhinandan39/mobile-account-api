@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="salesforce_create_sub_flow" doc:id="f7845634-745a-4001-96ce-ade9fcf14f59" >
+		<logger level="INFO" doc:name="LOG payload to Salesforce Create" doc:id="e1641e36-564c-436e-b50a-20c2974d1302" message="MOBILE-ACCOUNT-API-CREATE: PAYLOAD To Salesforce : #[payload]" />
+		<salesforce:create type="Account" doc:name="Create Account" doc:id="add70943-a442-4c0d-b5b5-f2046665e925" config-ref="Salesforce_Config" />
+		<ee:transform doc:name="Create JSON Payload" doc:id="30c5c7f5-85c1-4400-a878-5cd5d0513e06">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="LOG Response from Salesforce Create" doc:id="baef9946-b75b-4ba4-b84f-8e9c3f4602d2" message="MOBILE-ACCOUNT-API-CREATE: RESPONSE FROM Salesforce : #[payload]" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="757b736e-1ce2-411c-89c3-2b007a14218d" type="SALESFORCE:INVALID_INPUT">
+				<ee:transform doc:name="create Bad request payload" doc:id="79c37ec4-9366-480b-a842-4a6db72b2c43">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "status": 1,
+  "message": "Bad Request " ++ (error.description default "")
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="Set Variable" doc:id="a7da0afa-c91a-4f0a-93d6-309495ef1325" variableName="httpStatus" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e78f509a-8eb0-4318-ae67-4332393ad46a" type="HTTP:CONNECTIVITY">
+				<ee:transform doc:name="Create Timeout error payload" doc:id="98f001cd-e117-4919-b452-6af80a868cc1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "status": 1,
+  "message": "TECH_001:Create Account Call timeout"
+  
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="500" doc:name="Set Variable" doc:id="fe8e67a9-61b4-4c72-a724-e2d1a6fd26dc" variableName="httpStatus" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="9a2c78f2-25c8-4114-bff9-e6e320fc9f10">
+				<ee:transform doc:name="Create error payload" doc:id="1d071679-05cb-4a87-83f9-caa7c7ea5af1">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "status": 1,
+  "message": "TECH_003: Error From Create Account" ++ (error.description default "")
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="500" doc:name="Set Variable" doc:id="e173f8bd-6ec1-4235-868c-47c672567074" variableName="httpStatus" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="salesforce_get_by_accountId_sub_flow" doc:id="f46694b8-5327-4e7f-8cda-b38252671bdd" >
+		<salesforce:query doc:name="Query Account using accountId" doc:id="e91c71c1-da1e-47b4-96a1-19d56b867ea7" config-ref="Salesforce_Config" >
+			<salesforce:salesforce-query ><![CDATA[select 
+Name, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, ShippingStreet, ShippingCity, ShippingState, ShippingPostalCode, ShippingCountry, Phone, Fax, AccountNumber, emailAddress__c
+from Account where id__c = ':id']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	'id' : attributes.uriParams.accountId
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="Create JSON Payload" doc:id="e4e3f2da-e10d-4e7c-8d53-20104b1226ad" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="LOG Response From Salesforce Get Account" doc:id="37a87de6-f23a-4a56-951e-0190e81e8e8a" message="MOBILE-ACCOUNT-API-GET: RESPONSE FROM Salesforce : #[payload]" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="3cfad9b4-d640-4bae-9b00-aa6131bcd012" type="HTTP:CONNECTIVITY">
+				<ee:transform doc:name="Create Timeout error payload" doc:id="45476e4b-c68b-495f-aeb5-e86ae96241c6" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "status": 1,
+  "message": "TECH_001:Get Account Call timeout"
+  
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="500" doc:name="Set Variable" doc:id="921ed41e-3ff7-4be5-a9a6-0ea59e603af0" variableName="httpStatus" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="32d9093a-65fb-4255-8ae5-d328767ce1eb" >
+				<ee:transform doc:name="Create error payload" doc:id="d7650f42-1b42-4db4-a7e2-d560e8c2764e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "status": 1,
+  "message": "TECH_003: Error From Get Account" ++ (error.description default "")
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="500" doc:name="Set Variable" doc:id="69149c56-88bf-4a3b-8519-0506669b6960" variableName="httpStatus" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="salesforce_get_by_emailId_sub_flow" doc:id="feca0f31-64b7-4734-be07-d47eaf240b3b" >
+		<salesforce:query doc:name="Query Account using emailId" doc:id="d8acbe92-5fa9-449e-9136-58224e1a261a" config-ref="Salesforce_Config" >
+			<salesforce:salesforce-query ><![CDATA[select id__c from Account where emailAddress__c = ':email']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	'email' : vars.email
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="Create JSON Payload" doc:id="5602423d-85e7-4d72-9698-a01e0681e1bb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="LOG Response From Salesforce Get Account" doc:id="88edc529-ba3f-497c-8b5c-298e7b438d87" message="MOBILE-ACCOUNT-API-CREATE: GetByEmailID RESPONSE FROM Salesforce : #[payload]" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2f970024-34da-4fea-b465-15988532f988" >
+				<ee:transform doc:name="Create error payload" doc:id="fdfb8ba5-0ae1-42bc-84c3-13cf848972dc" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "status": 1,
+  "message": "TECH_003: Error From Get Account" ++ (error.description default "")
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="500" doc:name="Set Variable" doc:id="bb6da520-0cf9-4d0f-bb6d-9f7cb6dd3240" variableName="httpStatus" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

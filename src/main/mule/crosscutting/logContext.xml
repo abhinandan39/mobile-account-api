@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="log_request_sub_flow" doc:id="9f07488b-66dd-4f0a-9540-82807c96fe81" >
+		<logger level="INFO" doc:name="LOG Request Payload" doc:id="12056046-6ec7-4530-b2a7-72d716f71a6b" message='#[output application/json&#10;---&#10;{&#10;	traceId: attributes.headers.correlationId,&#10;	stage: "MOBILE-ACCOUNT-API:REQUEST",&#10;	endpoint: attributes.requestUri default "",&#10;	message: payload default ""&#10;}]'/>
+	</sub-flow>
+</mule>

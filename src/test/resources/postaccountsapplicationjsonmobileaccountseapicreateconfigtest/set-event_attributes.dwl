@@ -1,0 +1,32 @@
+{
+  "headers": {
+    "channel": "mobile",
+    "correlationid": "{test-correlationid-Feb-09-000004-Create}",
+    "client_id": "a02b95512d2d41ee9cef69b91a4876b9",
+    "client_secret": "bb1b616B48a94acEa9aaf49Db964Ab53",
+    "content-type": "application/json",
+    "user-agent": "PostmanRuntime/7.30.0",
+    "accept": "*/*",
+    "postman-token": "743f5b89-b53d-4830-a46f-54905fff6bc4",
+    "host": "localhost:8081",
+    "accept-encoding": "gzip, deflate, br",
+    "connection": "keep-alive",
+    "content-length": "465"
+  },
+  "clientCertificate": null,
+  "method": "POST",
+  "scheme": "http",
+  "queryParams": {},
+  "requestUri": "/api/accounts",
+  "queryString": "",
+  "version": "HTTP/1.1",
+  "maskedRequestPath": "/accounts",
+  "listenerPath": "/api/*",
+  "relativePath": "/api/accounts",
+  "localAddress": "/127.0.0.1:8081",
+  "uriParams": {},
+  "rawRequestUri": "/api/accounts",
+  "rawRequestPath": "/api/accounts",
+  "remoteAddress": "/127.0.0.1:54299",
+  "requestPath": "/api/accounts"
+}

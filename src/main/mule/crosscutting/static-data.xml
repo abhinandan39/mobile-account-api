@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	
+	<flow name="setup-country-data-startup" doc:id="f890753c-1b20-42de-b874-badb1a9924cb">
+		<scheduler doc:name="Scheduler" doc:id="263daa28-e8d5-4428-9bfa-a4183d713ed4">
+			<scheduling-strategy>
+				<fixed-frequency frequency="${scheduler.frequency}" timeUnit="DAYS" />
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="Log Scheduler Start" doc:id="a7941f10-1aef-4c0a-a6ba-2c0d028bf6fa" message="MOBILE-ACCOUNT-API: SCHEDULER STARTED"/>
+		<flow-ref doc:name="Call Countrylookup" doc:id="358c676e-f327-4e71-b1b0-ac55f126baee" name="countryLookupFlow"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="52bcfdbc-0c78-4659-b244-172f69b1cbd5" >
+				<logger level="ERROR" doc:name="Log Failure" doc:id="72deddca-2f67-4138-bd2f-db2eb1abb941" message='#["MOBILE-ACCOUNT-API": "ERR_0001: Unable to setup country data in object store using HTTP end-point"]' />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="setup-country-data-manual" doc:id="da86f0e3-04ba-4c40-b0ae-ba495e410d80" >
+		<http:listener doc:name="Listener" doc:id="29d1c152-8b7a-4746-8bd3-296d61b882e4" config-ref="mobile-accounts-eapi-httpListenerConfig" path="/refresh/countries"/>
+		<logger level="INFO" doc:name="Log HTTP Trigger" doc:id="7836a0e4-2fc9-435d-9ca2-2e839720b032" message="MOBILE-ACCOUNT-API: COUNTRY Setup HTTP TRIGGERED"/>
+		<flow-ref doc:name="Call Countrylookup" doc:id="a17ff283-b166-4f4c-88e8-c15ee50f24fe" name="countryLookupFlow"/>
+		<ee:transform doc:name="Transform Message" doc:id="da0b403d-3fae-48f3-927b-f7d9fe8dc924" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="09666ada-ed2c-4710-a56a-7d91c059e2b7" >
+				<ee:transform doc:name="Create Error payload" doc:id="e70fb9bc-10df-48d3-bf5d-a7616231a3f3" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"ERR_0001": "Unable to setup country data in object store"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Log Failure" doc:id="332e1e4f-0a0f-41f8-8f00-3be9e84e47d8" message='#["MOBILE-ACCOUNT-API: ERR_0001: Unable to setup country data in object store using HTTP end-point"]' />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<sub-flow name="countryLookupFlow" doc:id="8f1debf7-f917-4b76-ad76-fa43bb283627" >
+		<http:request method="GET" doc:name="Get Country Data" doc:id="47015401-378f-4a67-9871-cc00a8ef31bc" config-ref="HTTP_Request_configuration" path="/data/v1/countries" sendCorrelationId="ALWAYS" >
+			<reconnect />
+		</http:request>
+		<logger level="INFO" doc:name="Log Country Data" doc:id="95fb3924-a19c-4153-9df3-36d906647c9f" message='MOBILE-ACCOUNT-API COUNTRY DATA ::  #[payload]'/>
+		<choice doc:name="Choice" doc:id="52d300fa-60c6-4dd2-aa5c-456fde4ca0be" >
+			<when expression="#[payload.'status-code' == 200]" >
+				<os:store doc:name="Store" doc:id="7dd75785-a124-4e1d-a8f3-cc1d87751dc6" key="countryData" >
+					<os:value ><![CDATA[#[payload.data]]]></os:value>
+				</os:store>
+				<logger level="INFO" doc:name="Log Object Sote Success" doc:id="0c3b5fbf-03e0-49f0-8b4c-5145bccf5a55" message='#["MOBILE-ACCOUNT-API: COUNTRY DATA STORED IN OBJECT STORE"]'/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Log Failure" doc:id="d3437b39-fef3-448f-9ce2-f4e8a34e5d47" message='#["MOBILE-ACCOUNT-API: UNABLE To Store Data in ObjectStore. Re-attempt will be made via API Request"]' />
+				<raise-error doc:name="Raise error" doc:id="9064c4a9-650f-4beb-ad8b-c0360662e991" type="CUSTOM:ERR_0001" description="Unable to store data in object store" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<flow name="get-country-data" doc:id="1bf70466-2c6d-44f0-ae32-e69526554a17" >
+		<os:retrieve doc:name="Retrieve" doc:id="a93a1c35-e083-46c5-afd4-8ab24639510b" key="countryData">
+			<os:default-value ><![CDATA[null]]></os:default-value>
+		</os:retrieve>
+		<choice doc:name="Check if Object Store countain data" doc:id="c59698b4-faa3-4b1e-b01a-95c7a95f66a1" >
+			<when expression='#[payload == "null"]'>
+				<logger level="INFO" doc:name="Log No Data in Object Store" doc:id="9822ed54-69f1-4f8c-a5cf-f099fb242615" message="MOBILE-ACCOUNT-API: NO DATA IN OBJECT STORE. TRYING TO SET IT UP"/>
+				<flow-ref doc:name="Call Country lookup Flow" doc:id="ed38cd8d-cd0a-400e-8e06-9d950e4b6907" name="countryLookupFlow"/>
+				<logger level="INFO" doc:name="Log Object Store Success" doc:id="e93e4c78-0404-4138-8fba-ad3ed1bd6a96" message='"MOBILE-ACCOUNT-API: COUNTRY DATA STORED IN OBJECT STOR' />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Log Success" doc:id="d66588fd-58e0-44d0-99b5-a2b8883a1644" message="MOBILE-ACCOUNT-API:ABLE TO GET COUNTRY DATA FROM OBJECT STORE"/>
+			</otherwise>
+		</choice>
+		<error-handler>
+			<on-error-continue enableNotifications="true" logException="false" doc:name="On Error Continue" doc:id="5781606a-2374-4ef9-baa2-da9a26c5ee3b">
+				<logger level="ERROR" doc:name="Log Failure" doc:id="0bf65712-fc61-441c-b215-4c2347094700" message='#["MOBILE-ACCOUNT-API Error ERR_0001: Unable to store data in object store"]' />
+				<set-payload value="#[null]" doc:name="Set Payload" doc:id="eb9e4312-a2ee-4385-8b0f-e0b70e1f72de" mimeType="application/json" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>
