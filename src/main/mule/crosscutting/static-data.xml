@@ -75,6 +75,7 @@ output application/json
 			<when expression='#[payload == "null"]'>
 				<logger level="INFO" doc:name="Log No Data in Object Store" doc:id="9822ed54-69f1-4f8c-a5cf-f099fb242615" message="MOBILE-ACCOUNT-API: NO DATA IN OBJECT STORE. TRYING TO SET IT UP"/>
 				<flow-ref doc:name="Call Country lookup Flow" doc:id="ed38cd8d-cd0a-400e-8e06-9d950e4b6907" name="countryLookupFlow"/>
+				<set-payload value="#[payload.data]" doc:name="Set Country Data in Payload" doc:id="a1c1944b-67b8-41c7-984c-d1b37a835a82" />
 				<logger level="INFO" doc:name="Log Object Store Success" doc:id="e93e4c78-0404-4138-8fba-ad3ed1bd6a96" message='"MOBILE-ACCOUNT-API: COUNTRY DATA STORED IN OBJECT STOR' />
 			</when>
 			<otherwise >
